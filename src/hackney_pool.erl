@@ -63,7 +63,16 @@ checkout(Host, Port, Transport, Client) ->
   Requester = self(),
   try
     do_checkout(Requester, Host, Port, Transport, Client)
-  catch _:_ ->
+  catch Type:Reason:Stacktrace ->
+    case hackney_app:get_app_env(log_mf) of
+      undefined -> ok;
+      {M, F} -> M:F(
+        list_to_binary(io_lib:format(
+          "Hackney checkout_failure error: ~p, reason: ~p, stacktrace: ~p",
+          [Type, Reason, Stacktrace]
+        ))
+      )
+    end,
     {error, checkout_failure}
   end.
 
